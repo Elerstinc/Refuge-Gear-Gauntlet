@@ -240,6 +240,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 100%;
+      height: 100%;
     }
 
     .value-stack img {
@@ -252,45 +254,39 @@
     }
 
     .value-stack.double {
+      width: 220px;
+      max-width: 100%;
+      height: 190px;
       position: absolute;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
     }
 
-    .value-stack.double img {
+    .digit-slot {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 120px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .digit-slot img {
       height: clamp(90px, 14vw, 180px);
-      position: relative;
-      margin: 0;
+      width: auto;
+      max-width: none;
     }
 
-    /* HARD overlap */
-    .value-stack.double img:first-child {
-      transform: translateX(18px);
+    .digit-slot.left {
+      left: 16px;
       z-index: 2;
     }
 
-    .value-stack.double img:last-child {
-      transform: translateX(-18px);
+    .digit-slot.right {
+      right: 16px;
       z-index: 1;
-    }
-
-    .value-stack.double img:first-child {
-      left: -22px;
-      z-index: 2;
-    }
-
-    .value-stack.double img:last-child {
-      left: -58px;
-      z-index: 1;
-    }
-
-    .value-stack.double img:first-child {
-      margin-left: 0;
-    }
-
-    .value-stack.double img:first-child {
-      margin-left: 0;
     }
 
     .center-fallback {
@@ -832,7 +828,6 @@
       valueStack.classList.toggle("double", text.length > 1);
 
       const danger = (Number(value) <= 3 && Number(value) > 0 && isCountingDown);
-
       valueStack.style.filter = "";
       valueFallback.style.textShadow = "0 8px 20px rgba(0,0,0,0.45)";
       valueFallback.style.color = danger ? "#ff2a2a" : "white";
@@ -840,26 +835,47 @@
       let allLoaded = true;
 
       if (/^[0-9A]+$/.test(text)) {
-        for (const char of text) {
-          const filename = imageMap[char];
-          if (!filename) {
+        if (text.length === 1) {
+          const filename = imageMap[text];
+          const path = filename ? await findWorkingAssetPath(filename, imageBasePaths) : null;
+          if (path) {
+            const img = document.createElement("img");
+            img.src = path;
+            img.alt = text;
+            if (danger) {
+              img.style.filter = "hue-rotate(-35deg) saturate(2.5) brightness(1.1)";
+            }
+            valueStack.appendChild(img);
+          } else {
             allLoaded = false;
-            break;
           }
+        } else {
+          const chars = text.split("");
+          const slots = ["left", "right"];
 
-          const path = await findWorkingAssetPath(filename, imageBasePaths);
-          if (!path) {
-            allLoaded = false;
-            break;
-          }
+          for (let i = 0; i < chars.length; i++) {
+            const char = chars[i];
+            const filename = imageMap[char];
+            const path = filename ? await findWorkingAssetPath(filename, imageBasePaths) : null;
 
-          const img = document.createElement("img");
-          img.src = path;
-          img.alt = char;
-          if (danger) {
-            img.style.filter = "hue-rotate(-35deg) saturate(2.5) brightness(1.1)";
+            if (!path) {
+              allLoaded = false;
+              break;
+            }
+
+            const slot = document.createElement("div");
+            slot.className = `digit-slot ${slots[i] || "right"}`;
+
+            const img = document.createElement("img");
+            img.src = path;
+            img.alt = char;
+            if (danger) {
+              img.style.filter = "hue-rotate(-35deg) saturate(2.5) brightness(1.1)";
+            }
+
+            slot.appendChild(img);
+            valueStack.appendChild(slot);
           }
-          valueStack.appendChild(img);
         }
       } else {
         allLoaded = false;
