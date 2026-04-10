@@ -574,6 +574,7 @@
     const rouletteClickAudio = document.getElementById("rouletteClickAudio");
 
     let currentValue = 0;
+    let isCountingDown = false;
     let gearRotation = 0;
     let running = false;
     let activeTimeouts = [];
@@ -675,12 +676,11 @@
       valueStack.innerHTML = "";
       valueStack.classList.toggle("double", text.length > 1);
 
-      const danger = Number(value) === 3;
-      valueStack.style.filter = danger ? "drop-shadow(0 0 12px rgba(255,50,50,0.8))" : "";
-      valueFallback.style.color = danger ? "#ff3b3b" : "white";
-      valueFallback.style.textShadow = danger
-        ? "0 0 14px rgba(255,40,40,0.8), 0 8px 20px rgba(0,0,0,0.45)"
-        : "0 8px 20px rgba(0,0,0,0.45)";
+      const danger = (Number(value) <= 3 && Number(value) > 0 && isCountingDown);
+
+      valueStack.style.filter = "";
+      valueFallback.style.textShadow = "0 8px 20px rgba(0,0,0,0.45)";
+      valueFallback.style.color = danger ? "#ff2a2a" : "white";
 
       let allLoaded = true;
 
@@ -702,7 +702,7 @@
           img.src = path;
           img.alt = char;
           if (danger) {
-            img.style.filter = "drop-shadow(0 0 12px rgba(255,50,50,0.8)) hue-rotate(-35deg) saturate(2.2)";
+            img.style.filter = "hue-rotate(-35deg) saturate(2.5) brightness(1.1)";
           }
           valueStack.appendChild(img);
         }
@@ -767,6 +767,7 @@
     }
 
     async function animateCountUp(target) {
+      isCountingDown = false;
       setStatus("Counting up");
       roundInfo.textContent = `Loading round value: ${target}.`;
       for (let i = 0; i <= target; i++) {
@@ -777,6 +778,7 @@
     }
 
     async function animateCountdownFrom(target) {
+      isCountingDown = true;
       setStatus("Countdown active");
       roundInfo.textContent = "Gear is turning. One tick, one step down.";
 
