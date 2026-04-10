@@ -261,6 +261,18 @@
     .value-stack.double img {
       height: clamp(90px, 14vw, 180px);
       position: relative;
+      margin: 0;
+    }
+
+    /* HARD overlap */
+    .value-stack.double img:first-child {
+      transform: translateX(18px);
+      z-index: 2;
+    }
+
+    .value-stack.double img:last-child {
+      transform: translateX(-18px);
+      z-index: 1;
     }
 
     .value-stack.double img:first-child {
