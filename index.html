@@ -187,8 +187,8 @@
 
     .center-display {
       position: absolute;
-      width: 32%;
-      max-width: 170px;
+      width: 38%;
+      max-width: 230px;
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
@@ -197,12 +197,24 @@
       pointer-events: none;
     }
 
-    .center-display img {
-      width: 100%;
-      height: 100%;
+    .value-stack {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      min-height: 90px;
+    }
+
+    .value-stack img {
+      height: clamp(56px, 11vw, 108px);
+      width: auto;
       object-fit: contain;
       image-rendering: auto;
       filter: drop-shadow(0 8px 10px rgba(0,0,0,0.35));
+    }
+
+    .value-stack.double img {
+      height: clamp(52px, 9vw, 92px);
     }
 
     .center-fallback {
@@ -433,7 +445,7 @@
         <div class="gear-stage">
           <img id="gearImage" class="gear" src="Gear Gauntlet Resources/Images/Gear.png" alt="Gear" />
           <div class="center-display">
-            <img id="valueImage" alt="Current value" />
+            <div id="valueStack" class="value-stack"></div>
             <div id="valueFallback" class="center-fallback">0</div>
           </div>
         </div>
@@ -460,23 +472,39 @@
     </section>
   </div>
 
-  <audio id="gearTurnAudio" src="Gear Gauntlet Resources/Sounds/Gear Turn.mp3" preload="auto"></audio>
-  <audio id="revealAudio" src="Gear Gauntlet Resources/Sounds/Reveal.mp3" preload="auto"></audio>
+  <audio id="gearTurnAudio" preload="auto"></audio>
+  <audio id="revealAudio" preload="auto"></audio>
 
   <script>
     const imageMap = {
-      "0": "Gear Gauntlet Resources/Images/0.png",
-      "1": "Gear Gauntlet Resources/Images/1.png",
-      "2": "Gear Gauntlet Resources/Images/2.png",
-      "3": "Gear Gauntlet Resources/Images/3.png",
-      "4": "Gear Gauntlet Resources/Images/4.png",
-      "5": "Gear Gauntlet Resources/Images/5.png",
-      "6": "Gear Gauntlet Resources/Images/6.png",
-      "7": "Gear Gauntlet Resources/Images/7.png",
-      "8": "Gear Gauntlet Resources/Images/8.png",
-      "9": "Gear Gauntlet Resources/Images/9.png",
-      "A": "Gear Gauntlet Resources/Images/A.png"
+      "0": "0.png",
+      "1": "1.png",
+      "2": "2.png",
+      "3": "3.png",
+      "4": "4.png",
+      "5": "5.png",
+      "6": "6.png",
+      "7": "7.png",
+      "8": "8.png",
+      "9": "9.png",
+      "A": "A.png"
     };
+
+    const imageBasePaths = [
+      "Gear Gauntlet Resources/Images/",
+      "Gear%20Gauntlet%20Resources/Images/",
+      "Images/",
+      "images/",
+      ""
+    ];
+
+    const soundBasePaths = [
+      "Gear Gauntlet Resources/Sounds/",
+      "Gear%20Gauntlet%20Resources/Sounds/",
+      "Sounds/",
+      "sounds/",
+      ""
+    ];
 
     const minigames = [
       "Hot Potato",
@@ -501,7 +529,7 @@
     const statusText = document.getElementById("statusText");
     const roundInfo = document.getElementById("roundInfo");
     const gearImage = document.getElementById("gearImage");
-    const valueImage = document.getElementById("valueImage");
+    const valueStack = document.getElementById("valueStack");
     const valueFallback = document.getElementById("valueFallback");
     const rouletteStatus = document.getElementById("rouletteStatus");
     const rouletteTrack = document.getElementById("rouletteTrack");
@@ -564,18 +592,84 @@
       rouletteStatus.textContent = text;
     }
 
-    function setValueDisplay(value) {
-      const key = String(value).toUpperCase();
-      const filename = imageMap[key];
+    async function findWorkingAssetPath(filename, basePaths) {
+      for (const base of basePaths) {
+        const candidate = `${base}${filename}`;
+        const works = await new Promise(resolve => {
+          const probe = new Image();
+          probe.onload = () => resolve(true);
+          probe.onerror = () => resolve(false);
+          probe.src = candidate;
+        });
+        if (works) return candidate;
+      }
+      return null;
+    }
 
-      if (filename) {
-        valueImage.src = filename;
-        valueImage.style.display = "block";
+    async function assignAudioSource(audioEl, filename) {
+      for (const base of soundBasePaths) {
+        const candidate = `${base}${filename}`;
+        const works = await new Promise(resolve => {
+          const testAudio = document.createElement("audio");
+          testAudio.preload = "metadata";
+          testAudio.onloadeddata = () => resolve(true);
+          testAudio.onerror = () => resolve(false);
+          testAudio.src = candidate;
+        });
+        if (works) {
+          audioEl.src = candidate;
+          return candidate;
+        }
+      }
+      return null;
+    }
+
+    async function loadGearImage() {
+      const path = await findWorkingAssetPath("Gear.png", imageBasePaths);
+      if (path) {
+        gearImage.src = path;
+        return true;
+      }
+      gearImage.removeAttribute("src");
+      return false;
+    }
+
+    async function setValueDisplay(value) {
+      const text = String(value).toUpperCase();
+      valueStack.innerHTML = "";
+      valueStack.classList.toggle("double", text.length > 1);
+
+      let allLoaded = true;
+
+      if (/^[0-9A]+$/.test(text)) {
+        for (const char of text) {
+          const filename = imageMap[char];
+          if (!filename) {
+            allLoaded = false;
+            break;
+          }
+
+          const path = await findWorkingAssetPath(filename, imageBasePaths);
+          if (!path) {
+            allLoaded = false;
+            break;
+          }
+
+          const img = document.createElement("img");
+          img.src = path;
+          img.alt = char;
+          valueStack.appendChild(img);
+        }
+      } else {
+        allLoaded = false;
+      }
+
+      if (allLoaded && valueStack.children.length) {
+        valueStack.style.display = "flex";
         valueFallback.style.display = "none";
       } else {
-        valueImage.removeAttribute("src");
-        valueImage.style.display = "none";
-        valueFallback.textContent = key;
+        valueStack.style.display = "none";
+        valueFallback.textContent = text;
         valueFallback.style.display = "block";
       }
     }
@@ -585,9 +679,9 @@
       gearImage.style.transform = `rotate(${gearRotation}deg)`;
     }
 
-    function resetRoundVisuals() {
+    async function resetRoundVisuals() {
       currentValue = 0;
-      setValueDisplay(0);
+      await setValueDisplay(0);
       setGearRotation(0);
       rouletteResult.textContent = "";
       rouletteResult.classList.remove("show");
@@ -598,13 +692,13 @@
       showGearScreen();
     }
 
-    function hardReset() {
+    async function hardReset() {
       clearAllTimers();
       running = false;
       startBtn.disabled = false;
       valueInput.disabled = false;
       valueInput.value = "";
-      resetRoundVisuals();
+      await resetRoundVisuals();
     }
 
     function sanitizeInput(raw) {
@@ -618,7 +712,7 @@
 
       if (/^\d+$/.test(input)) {
         const number = Number(input);
-        if (number >= 0 && number <= 99) {
+        if (number >= 0 && number <= 20) {
           return { type: "number", value: number };
         }
       }
@@ -631,7 +725,7 @@
       roundInfo.textContent = `Loading round value: ${target}.`;
       for (let i = 0; i <= target; i++) {
         currentValue = i;
-        setValueDisplay(i);
+        await setValueDisplay(i);
         await sleep(i === 0 ? 220 : 320);
       }
     }
@@ -647,13 +741,13 @@
         playAudio(gearTurnAudio, 0.82);
         value -= 1;
         currentValue = value;
-        setValueDisplay(value);
+        await setValueDisplay(value);
       }
 
       setStatus("Round complete");
       roundInfo.textContent = "Value has reached zero. Resetting for the next round.";
       await sleep(1200);
-      resetAfterRound();
+      await resetAfterRound();
     }
 
     function buildRouletteTrack() {
@@ -765,15 +859,15 @@
       setRouletteStatus("Minigame selected");
 
       await sleep(2200);
-      resetAfterRound();
+      await resetAfterRound();
     }
 
-    function resetAfterRound() {
+    async function resetAfterRound() {
       running = false;
       startBtn.disabled = false;
       valueInput.disabled = false;
       valueInput.value = "";
-      resetRoundVisuals();
+      await resetRoundVisuals();
     }
 
     async function startRound() {
@@ -784,7 +878,7 @@
 
       if (!parsed) {
         setStatus("Invalid input");
-        roundInfo.textContent = "Use a number from 0 to 99, or enter Q, K, or J.";
+        roundInfo.textContent = "Use a number from 0 to 20, or enter Q, K, or J.";
         valueInput.focus();
         return;
       }
@@ -813,8 +907,14 @@
       }
     });
 
+    async function initializeAssets() {
+      await loadGearImage();
+      await assignAudioSource(gearTurnAudio, "Gear Turn.mp3");
+      await assignAudioSource(revealAudio, "Reveal.mp3");
+    }
+
     buildRouletteTrack();
-    resetRoundVisuals();
+    initializeAssets().then(() => resetRoundVisuals());
   </script>
 </body>
 </html>
