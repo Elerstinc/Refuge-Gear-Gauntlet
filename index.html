@@ -496,9 +496,70 @@
         height: 132px;
       }
     }
+  
+
+    .atmosphere {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 40;
+    }
+
+    .embers,
+    .ashes {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      bottom: -8vh;
+      border-radius: 50%;
+      opacity: 0;
+      will-change: transform, opacity;
+      animation-name: riseParticle;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    .particle.ember {
+      background: radial-gradient(circle, rgba(255,210,120,0.95) 0%, rgba(255,122,40,0.82) 45%, rgba(255,80,20,0.18) 72%, rgba(255,80,20,0) 100%);
+      box-shadow: 0 0 8px rgba(255,120,30,0.45), 0 0 18px rgba(255,150,60,0.22);
+      filter: blur(0.2px);
+    }
+
+    .particle.ash {
+      background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(210,210,210,0.44) 52%, rgba(140,140,140,0.1) 72%, rgba(120,120,120,0) 100%);
+      box-shadow: 0 0 6px rgba(255,255,255,0.08);
+      filter: blur(0.5px);
+    }
+
+    @keyframes riseParticle {
+      0% {
+        transform: translate3d(0, 0, 0) scale(0.7);
+        opacity: 0;
+      }
+      8% {
+        opacity: var(--particle-opacity, 0.6);
+      }
+      65% {
+        opacity: calc(var(--particle-opacity, 0.6) * 0.75);
+      }
+      100% {
+        transform: translate3d(var(--drift-x, 0px), -120vh, 0) scale(1.15);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="atmosphere" aria-hidden="true">
+    <div id="embersLayer" class="embers"></div>
+    <div id="ashesLayer" class="ashes"></div>
+  </div>
+
   <div class="app">
     <div class="topbar">
       <div class="title-wrap">
@@ -607,6 +668,8 @@
     const rouletteTrack = document.getElementById("rouletteTrack");
     const rouletteResult = document.getElementById("rouletteResult");
     const gearTurnAudio = document.getElementById("gearTurnAudio");
+    const embersLayer = document.getElementById("embersLayer");
+    const ashesLayer = document.getElementById("ashesLayer");
     const revealAudio = document.getElementById("revealAudio");
     const rouletteClickAudio = document.getElementById("rouletteClickAudio");
 
@@ -642,6 +705,41 @@
         audio.volume = volume;
         audio.play().catch(() => {});
       } catch (_) {}
+    }
+
+    function createParticle(layer, type, options = {}) {
+      const particle = document.createElement("span");
+      particle.className = `particle ${type}`;
+
+      const size = options.size ?? (type === "ember" ? 2 + Math.random() * 7 : 1 + Math.random() * 5);
+      const left = options.left ?? Math.random() * 100;
+      const duration = options.duration ?? (type === "ember" ? 5 + Math.random() * 6 : 9 + Math.random() * 8);
+      const delay = options.delay ?? (-Math.random() * duration);
+      const drift = options.drift ?? ((Math.random() - 0.5) * (type === "ember" ? 140 : 90));
+      const opacity = options.opacity ?? (type === "ember" ? 0.35 + Math.random() * 0.5 : 0.12 + Math.random() * 0.28);
+
+      particle.style.left = `${left}%`;
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      particle.style.animationDuration = `${duration}s`;
+      particle.style.animationDelay = `${delay}s`;
+      particle.style.setProperty("--drift-x", `${drift}px`);
+      particle.style.setProperty("--particle-opacity", `${opacity}`);
+
+      layer.appendChild(particle);
+    }
+
+    function buildAtmosphere() {
+      embersLayer.innerHTML = "";
+      ashesLayer.innerHTML = "";
+
+      for (let i = 0; i < 42; i++) {
+        createParticle(embersLayer, "ember");
+      }
+
+      for (let i = 0; i < 34; i++) {
+        createParticle(ashesLayer, "ash");
+      }
     }
 
     function sleep(ms) {
@@ -1041,6 +1139,7 @@
       }
     }
 
+    buildAtmosphere();
     initializeAssets().then(async () => {
       await loadBackground();
       resetRoundVisuals();
