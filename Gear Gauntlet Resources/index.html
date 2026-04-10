@@ -22,13 +22,29 @@
     }
 
     html, body {
-      margin: 0;
-      min-height: 100%;
-      background:
-        radial-gradient(circle at top, #1f1f24 0%, #111114 36%, #080809 100%);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Blurry background layer */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background: url('Gear Gauntlet Resources/Images/Background.png') center / cover no-repeat;
+      filter: blur(18px) brightness(0.6);
+      transform: scale(1.05);
+    }
+
+    /* subtle dark overlay for contrast */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: radial-gradient(circle at center, rgba(0,0,0,0.2), rgba(0,0,0,0.75));
     }
 
     body {
@@ -160,18 +176,20 @@
     }
 
     .gear-screen {
-      display: grid;
-      place-items: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       min-height: 100%;
-      padding: 40px;
+      padding: 20px;
     }
 
     .gear-stage {
       position: relative;
-      width: min(64vw, 520px);
+      width: min(70vw, 720px);
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
+      margin: 0 auto;
       filter: drop-shadow(0 24px 50px rgba(0,0,0,0.55));
     }
 
@@ -181,38 +199,81 @@
       object-fit: contain;
       user-select: none;
       pointer-events: none;
-      transition: transform 540ms cubic-bezier(.2,.8,.2,1);
+      transition: transform 760ms cubic-bezier(.2,.8,.2,1);
       transform: rotate(0deg);
+      transform-origin: center center;
     }
 
     .center-display {
       position: absolute;
-      width: 32%;
-      max-width: 170px;
+      left: 50%;
+      top: 50%;
+      width: 42%;
+      max-width: 320px;
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
       z-index: 2;
       user-select: none;
       pointer-events: none;
+      transform: translate(-50%, -50%);
     }
 
-    .center-display img {
+    .value-stack {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      min-height: 90px;
       width: 100%;
-      height: 100%;
+      margin: 0 auto;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .value-stack img {
+      height: clamp(86px, 15vw, 168px);
+      width: auto;
       object-fit: contain;
       image-rendering: auto;
       filter: drop-shadow(0 8px 10px rgba(0,0,0,0.35));
+      display: block;
+    }
+
+    .value-stack.double {
+      gap: 0;
+      transform: translate(-50%, -50%);
+    }
+
+    .value-stack.double img {
+      height: clamp(90px, 14vw, 180px);
+      margin-left: -36px;
+    }
+
+    .value-stack.double img:first-child {
+      margin-left: 0;
+    }
+
+    .value-stack.double img:first-child {
+      margin-left: 0;
     }
 
     .center-fallback {
       display: none;
-      font-size: clamp(2.8rem, 9vw, 5.8rem);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(4rem, 12vw, 7.5rem);
       font-weight: 900;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       color: white;
       text-shadow: 0 8px 20px rgba(0,0,0,0.45);
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .round-info {
@@ -396,12 +457,22 @@
       }
 
       .gear-stage {
-        width: min(82vw, 420px);
+        width: min(94vw, 700px);
       }
 
       .roulette-item {
         flex-basis: 180px;
       }
+
+      .roulette-window {
+        height: 132px;
+      }
+    }
+
+      .roulette-window {
+        height: 132px;
+      }
+    }
 
       .roulette-window {
         height: 132px;
@@ -433,7 +504,7 @@
         <div class="gear-stage">
           <img id="gearImage" class="gear" src="Gear Gauntlet Resources/Images/Gear.png" alt="Gear" />
           <div class="center-display">
-            <img id="valueImage" alt="Current value" />
+            <div id="valueStack" class="value-stack"></div>
             <div id="valueFallback" class="center-fallback">0</div>
           </div>
         </div>
@@ -460,38 +531,49 @@
     </section>
   </div>
 
-  <audio id="gearTurnAudio" src="Gear Gauntlet Resources/Sounds/Gear Turn.mp3" preload="auto"></audio>
-  <audio id="revealAudio" src="Gear Gauntlet Resources/Sounds/Reveal.mp3" preload="auto"></audio>
+  <audio id="gearTurnAudio" preload="auto"></audio>
+  <audio id="revealAudio" preload="auto"></audio>
+  <audio id="rouletteClickAudio" preload="auto"></audio>
 
   <script>
     const imageMap = {
-      "0": "Gear Gauntlet Resources/Images/0.png",
-      "1": "Gear Gauntlet Resources/Images/1.png",
-      "2": "Gear Gauntlet Resources/Images/2.png",
-      "3": "Gear Gauntlet Resources/Images/3.png",
-      "4": "Gear Gauntlet Resources/Images/4.png",
-      "5": "Gear Gauntlet Resources/Images/5.png",
-      "6": "Gear Gauntlet Resources/Images/6.png",
-      "7": "Gear Gauntlet Resources/Images/7.png",
-      "8": "Gear Gauntlet Resources/Images/8.png",
-      "9": "Gear Gauntlet Resources/Images/9.png",
-      "A": "Gear Gauntlet Resources/Images/A.png"
+      "0": "0.png",
+      "1": "1.png",
+      "2": "2.png",
+      "3": "3.png",
+      "4": "4.png",
+      "5": "5.png",
+      "6": "6.png",
+      "7": "7.png",
+      "8": "8.png",
+      "9": "9.png",
+      "A": "A.png"
     };
 
-    const minigames = [
-      "Hot Potato",
-      "Chair Clash",
-      "Dice Duel",
-      "Card Blitz",
-      "Last Stand",
-      "Quick Draw",
-      "Mystery Box",
-      "King's Command",
-      "Queen's Favor",
-      "Joker's Wild",
-      "Target Toss",
-      "Rapid Relay"
+    const imageBasePaths = [
+      "Gear Gauntlet Resources/Images/",
+      "Gear%20Gauntlet%20Resources/Images/",
+      "Images/",
+      "images/",
+      ""
     ];
+
+    const soundBasePaths = [
+      "Gear Gauntlet Resources/Sounds/",
+      "Gear%20Gauntlet%20Resources/Sounds/",
+      "Sounds/",
+      "sounds/",
+      ""
+    ];
+
+    const weightedMinigames = [
+      { name: "Gulag Match", weight: 15 },
+      { name: "Hot Potato", weight: 35 },
+      { name: "Mini Survivor Match", weight: 20 },
+      { name: "Pool Noodle 1v1", weight: 20 }
+    ];
+
+    const minigames = weightedMinigames.map(game => game.name);
 
     const gearScreen = document.getElementById("gearScreen");
     const rouletteScreen = document.getElementById("rouletteScreen");
@@ -501,15 +583,17 @@
     const statusText = document.getElementById("statusText");
     const roundInfo = document.getElementById("roundInfo");
     const gearImage = document.getElementById("gearImage");
-    const valueImage = document.getElementById("valueImage");
+    const valueStack = document.getElementById("valueStack");
     const valueFallback = document.getElementById("valueFallback");
     const rouletteStatus = document.getElementById("rouletteStatus");
     const rouletteTrack = document.getElementById("rouletteTrack");
     const rouletteResult = document.getElementById("rouletteResult");
     const gearTurnAudio = document.getElementById("gearTurnAudio");
     const revealAudio = document.getElementById("revealAudio");
+    const rouletteClickAudio = document.getElementById("rouletteClickAudio");
 
     let currentValue = 0;
+    let isCountingDown = false;
     let gearRotation = 0;
     let running = false;
     let activeTimeouts = [];
@@ -564,18 +648,93 @@
       rouletteStatus.textContent = text;
     }
 
-    function setValueDisplay(value) {
-      const key = String(value).toUpperCase();
-      const filename = imageMap[key];
+    async function findWorkingAssetPath(filename, basePaths) {
+      for (const base of basePaths) {
+        const candidate = `${base}${filename}`;
+        const works = await new Promise(resolve => {
+          const probe = new Image();
+          probe.onload = () => resolve(true);
+          probe.onerror = () => resolve(false);
+          probe.src = candidate;
+        });
+        if (works) return candidate;
+      }
+      return null;
+    }
 
-      if (filename) {
-        valueImage.src = filename;
-        valueImage.style.display = "block";
+    async function assignAudioSource(audioEl, filename) {
+      for (const base of soundBasePaths) {
+        const candidate = `${base}${filename}`;
+        const works = await new Promise(resolve => {
+          const testAudio = document.createElement("audio");
+          testAudio.preload = "metadata";
+          testAudio.onloadeddata = () => resolve(true);
+          testAudio.onerror = () => resolve(false);
+          testAudio.src = candidate;
+        });
+        if (works) {
+          audioEl.src = candidate;
+          return candidate;
+        }
+      }
+      return null;
+    }
+
+    async function loadGearImage() {
+      const path = await findWorkingAssetPath("Gear.png", imageBasePaths);
+      if (path) {
+        gearImage.src = path;
+        return true;
+      }
+      gearImage.removeAttribute("src");
+      return false;
+    }
+
+    async function setValueDisplay(value) {
+      const text = String(value).toUpperCase();
+      valueStack.innerHTML = "";
+      valueStack.classList.toggle("double", text.length > 1);
+
+      const danger = (Number(value) <= 3 && Number(value) > 0 && isCountingDown);
+
+      valueStack.style.filter = "";
+      valueFallback.style.textShadow = "0 8px 20px rgba(0,0,0,0.45)";
+      valueFallback.style.color = danger ? "#ff2a2a" : "white";
+
+      let allLoaded = true;
+
+      if (/^[0-9A]+$/.test(text)) {
+        for (const char of text) {
+          const filename = imageMap[char];
+          if (!filename) {
+            allLoaded = false;
+            break;
+          }
+
+          const path = await findWorkingAssetPath(filename, imageBasePaths);
+          if (!path) {
+            allLoaded = false;
+            break;
+          }
+
+          const img = document.createElement("img");
+          img.src = path;
+          img.alt = char;
+          if (danger) {
+            img.style.filter = "hue-rotate(-35deg) saturate(2.5) brightness(1.1)";
+          }
+          valueStack.appendChild(img);
+        }
+      } else {
+        allLoaded = false;
+      }
+
+      if (allLoaded && valueStack.children.length) {
+        valueStack.style.display = "flex";
         valueFallback.style.display = "none";
       } else {
-        valueImage.removeAttribute("src");
-        valueImage.style.display = "none";
-        valueFallback.textContent = key;
+        valueStack.style.display = "none";
+        valueFallback.textContent = text;
         valueFallback.style.display = "block";
       }
     }
@@ -585,9 +744,9 @@
       gearImage.style.transform = `rotate(${gearRotation}deg)`;
     }
 
-    function resetRoundVisuals() {
+    async function resetRoundVisuals() {
       currentValue = 0;
-      setValueDisplay(0);
+      await setValueDisplay(0);
       setGearRotation(0);
       rouletteResult.textContent = "";
       rouletteResult.classList.remove("show");
@@ -598,13 +757,13 @@
       showGearScreen();
     }
 
-    function hardReset() {
+    async function hardReset() {
       clearAllTimers();
       running = false;
       startBtn.disabled = false;
       valueInput.disabled = false;
       valueInput.value = "";
-      resetRoundVisuals();
+      await resetRoundVisuals();
     }
 
     function sanitizeInput(raw) {
@@ -618,7 +777,7 @@
 
       if (/^\d+$/.test(input)) {
         const number = Number(input);
-        if (number >= 0 && number <= 99) {
+        if (number >= 0 && number <= 20) {
           return { type: "number", value: number };
         }
       }
@@ -627,40 +786,62 @@
     }
 
     async function animateCountUp(target) {
+      isCountingDown = false;
       setStatus("Counting up");
       roundInfo.textContent = `Loading round value: ${target}.`;
       for (let i = 0; i <= target; i++) {
         currentValue = i;
-        setValueDisplay(i);
+        await setValueDisplay(i);
         await sleep(i === 0 ? 220 : 320);
       }
     }
 
     async function animateCountdownFrom(target) {
+      isCountingDown = true;
       setStatus("Countdown active");
       roundInfo.textContent = "Gear is turning. One tick, one step down.";
 
       let value = target;
       while (value > 0) {
-        await sleep(800);
+        await sleep(1080);
         setGearRotation(gearRotation + 15);
         playAudio(gearTurnAudio, 0.82);
         value -= 1;
         currentValue = value;
-        setValueDisplay(value);
+        await setValueDisplay(value);
       }
 
       setStatus("Round complete");
       roundInfo.textContent = "Value has reached zero. Resetting for the next round.";
       await sleep(1200);
-      resetAfterRound();
+      await resetAfterRound();
+    }
+
+    function shuffleArray(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function buildWeightedSegment() {
+      const segment = [];
+      weightedMinigames.forEach(game => {
+        for (let j = 0; j < game.weight; j++) {
+          segment.push(game.name);
+        }
+      });
+      return shuffleArray(segment);
     }
 
     function buildRouletteTrack() {
       rouletteTrack.innerHTML = "";
       const repeated = [];
-      for (let i = 0; i < 5; i++) {
-        repeated.push(...minigames);
+
+      for (let i = 0; i < 6; i++) {
+        repeated.push(...buildWeightedSegment());
       }
 
       repeated.forEach(name => {
@@ -676,7 +857,19 @@
       });
     }
 
-    function spinRouletteToResult(forcedPool) {
+    function pickWeightedResult() {
+      const totalWeight = weightedMinigames.reduce((sum, game) => sum + game.weight, 0);
+      let roll = Math.random() * totalWeight;
+
+      for (const game of weightedMinigames) {
+        roll -= game.weight;
+        if (roll <= 0) return game.name;
+      }
+
+      return weightedMinigames[weightedMinigames.length - 1].name;
+    }
+
+    function spinRouletteToResult() {
       return new Promise(resolve => {
         buildRouletteTrack();
         rouletteResult.classList.remove("show");
@@ -687,11 +880,11 @@
         const windowWidth = rouletteTrack.parentElement.getBoundingClientRect().width;
         const centerOffset = (windowWidth / 2) - (itemWidth / 2);
 
-        const resultName = forcedPool[Math.floor(Math.random() * forcedPool.length)];
+        const resultName = pickWeightedResult();
 
         const validIndices = [];
         allItems.forEach((item, index) => {
-          if (item.textContent === resultName && index > minigames.length && index < allItems.length - minigames.length) {
+          if (item.textContent === resultName && index > Math.floor(allItems.length * 0.3) && index < Math.floor(allItems.length * 0.88)) {
             validIndices.push(index);
           }
         });
@@ -700,19 +893,12 @@
         const targetX = -(targetIndex * itemWidth) + centerOffset;
 
         let start = null;
-        const duration = 5200;
-        const extraDistance = 880;
+        const duration = 7600;
         const startX = 0;
-        const overshootX = targetX - extraDistance;
+        const previousIndexState = { value: -1 };
 
         function easeOutCubic(t) {
           return 1 - Math.pow(1 - t, 3);
-        }
-
-        function easeInOutQuint(t) {
-          return t < 0.5
-            ? 16 * t * t * t * t * t
-            : 1 - Math.pow(-2 * t + 2, 5) / 2;
         }
 
         function animate(timestamp) {
@@ -720,16 +906,15 @@
           const elapsed = timestamp - start;
           const t = Math.min(elapsed / duration, 1);
 
-          let x;
-          if (t < 0.78) {
-            const phase = t / 0.78;
-            x = startX + (overshootX - startX) * easeOutCubic(phase);
-          } else {
-            const phase = (t - 0.78) / 0.22;
-            x = overshootX + (targetX - overshootX) * easeInOutQuint(phase);
-          }
-
+          const x = startX + (targetX - startX) * easeOutCubic(t);
           rouletteTrack.style.transform = `translateX(${x}px)`;
+
+          const centerPosition = -x + centerOffset;
+          const passedIndex = Math.round(centerPosition / itemWidth);
+          if (passedIndex !== previousIndexState.value && passedIndex >= 0 && passedIndex < allItems.length) {
+            previousIndexState.value = passedIndex;
+            playAudio(rouletteClickAudio, 0.45);
+          }
 
           if (t < 1) {
             spinFrame = requestAnimationFrame(animate);
@@ -751,29 +936,22 @@
       showRouletteScreen();
       setRouletteStatus("Spinning roulette");
 
-      const specialMap = {
-        Q: ["Queen's Favor", "Target Toss", "Card Blitz", "Hot Potato", "Quick Draw"],
-        K: ["King's Command", "Last Stand", "Dice Duel", "Rapid Relay", "Chair Clash"],
-        J: ["Joker's Wild", "Mystery Box", "Hot Potato", "Card Blitz", "Dice Duel"]
-      };
-
-      const pool = specialMap[inputType] || minigames;
-      const result = await spinRouletteToResult(pool);
+      const result = await spinRouletteToResult();
       playAudio(revealAudio, 0.92);
       rouletteResult.textContent = result;
       rouletteResult.classList.add("show");
       setRouletteStatus("Minigame selected");
 
       await sleep(2200);
-      resetAfterRound();
+      await resetAfterRound();
     }
 
-    function resetAfterRound() {
+    async function resetAfterRound() {
       running = false;
       startBtn.disabled = false;
       valueInput.disabled = false;
       valueInput.value = "";
-      resetRoundVisuals();
+      await resetRoundVisuals();
     }
 
     async function startRound() {
@@ -784,7 +962,7 @@
 
       if (!parsed) {
         setStatus("Invalid input");
-        roundInfo.textContent = "Use a number from 0 to 99, or enter Q, K, or J.";
+        roundInfo.textContent = "Use a number from 0 to 20, or enter Q, K, or J.";
         valueInput.focus();
         return;
       }
@@ -813,8 +991,15 @@
       }
     });
 
+    async function initializeAssets() {
+      await loadGearImage();
+      await assignAudioSource(gearTurnAudio, "Gear Turn.mp3");
+      await assignAudioSource(revealAudio, "Reveal.mp3");
+      await assignAudioSource(rouletteClickAudio, "roulette click.mp3");
+    }
+
     buildRouletteTrack();
-    resetRoundVisuals();
+    initializeAssets().then(() => resetRoundVisuals());
   </script>
 </body>
 </html>
