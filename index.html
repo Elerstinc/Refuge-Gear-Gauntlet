@@ -168,7 +168,7 @@
 
     .gear-stage {
       position: relative;
-      width: min(64vw, 520px);
+      width: min(80vw, 650px);
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
@@ -181,20 +181,21 @@
       object-fit: contain;
       user-select: none;
       pointer-events: none;
-      transition: transform 540ms cubic-bezier(.2,.8,.2,1);
+      transition: transform 760ms cubic-bezier(.2,.8,.2,1);
       transform: rotate(0deg);
     }
 
     .center-display {
       position: absolute;
-      width: 38%;
-      max-width: 230px;
+      width: 42%;
+      max-width: 270px;
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
       z-index: 2;
       user-select: none;
       pointer-events: none;
+      transform: translateY(2px);
     }
 
     .value-stack {
@@ -206,7 +207,7 @@
     }
 
     .value-stack img {
-      height: clamp(56px, 11vw, 108px);
+      height: clamp(74px, 14vw, 138px);
       width: auto;
       object-fit: contain;
       image-rendering: auto;
@@ -214,14 +215,14 @@
     }
 
     .value-stack.double img {
-      height: clamp(52px, 9vw, 92px);
+      height: clamp(64px, 11vw, 118px);
     }
 
     .center-fallback {
       display: none;
-      font-size: clamp(2.8rem, 9vw, 5.8rem);
+      font-size: clamp(3.4rem, 11vw, 6.8rem);
       font-weight: 900;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       color: white;
       text-shadow: 0 8px 20px rgba(0,0,0,0.45);
@@ -408,12 +409,17 @@
       }
 
       .gear-stage {
-        width: min(82vw, 420px);
+        width: min(90vw, 520px);
       }
 
       .roulette-item {
         flex-basis: 180px;
       }
+
+      .roulette-window {
+        height: 132px;
+      }
+    }
 
       .roulette-window {
         height: 132px;
@@ -639,6 +645,13 @@
       valueStack.innerHTML = "";
       valueStack.classList.toggle("double", text.length > 1);
 
+      const danger = Number(value) === 3;
+      valueStack.style.filter = danger ? "drop-shadow(0 0 12px rgba(255,50,50,0.8))" : "";
+      valueFallback.style.color = danger ? "#ff3b3b" : "white";
+      valueFallback.style.textShadow = danger
+        ? "0 0 14px rgba(255,40,40,0.8), 0 8px 20px rgba(0,0,0,0.45)"
+        : "0 8px 20px rgba(0,0,0,0.45)";
+
       let allLoaded = true;
 
       if (/^[0-9A]+$/.test(text)) {
@@ -658,6 +671,9 @@
           const img = document.createElement("img");
           img.src = path;
           img.alt = char;
+          if (danger) {
+            img.style.filter = "drop-shadow(0 0 12px rgba(255,50,50,0.8)) hue-rotate(-35deg) saturate(2.2)";
+          }
           valueStack.appendChild(img);
         }
       } else {
@@ -736,7 +752,7 @@
 
       let value = target;
       while (value > 0) {
-        await sleep(800);
+        await sleep(1080);
         setGearRotation(gearRotation + 15);
         playAudio(gearTurnAudio, 0.82);
         value -= 1;
