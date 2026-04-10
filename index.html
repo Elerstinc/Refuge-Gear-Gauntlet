@@ -204,6 +204,8 @@
       justify-content: center;
       gap: 0;
       min-height: 90px;
+      width: 100%;
+      margin: 0 auto;
     }
 
     .value-stack img {
@@ -214,8 +216,18 @@
       filter: drop-shadow(0 8px 10px rgba(0,0,0,0.35));
     }
 
+    .value-stack.double {
+      gap: 0;
+      transform: translateX(0);
+    }
+
     .value-stack.double img {
       height: clamp(64px, 11vw, 118px);
+      margin-left: -10px;
+    }
+
+    .value-stack.double img:first-child {
+      margin-left: 0;
     }
 
     .center-fallback {
@@ -480,6 +492,7 @@
 
   <audio id="gearTurnAudio" preload="auto"></audio>
   <audio id="revealAudio" preload="auto"></audio>
+  <audio id="rouletteClickAudio" preload="auto"></audio>
 
   <script>
     const imageMap = {
@@ -512,20 +525,14 @@
       ""
     ];
 
-    const minigames = [
-      "Hot Potato",
-      "Chair Clash",
-      "Dice Duel",
-      "Card Blitz",
-      "Last Stand",
-      "Quick Draw",
-      "Mystery Box",
-      "King's Command",
-      "Queen's Favor",
-      "Joker's Wild",
-      "Target Toss",
-      "Rapid Relay"
+    const weightedMinigames = [
+      { name: "Gulag Match", weight: 15 },
+      { name: "Hot Potato", weight: 35 },
+      { name: "Mini Survivor Match", weight: 20 },
+      { name: "Pool Noodle 1v1", weight: 20 }
     ];
+
+    const minigames = weightedMinigames.map(game => game.name);
 
     const gearScreen = document.getElementById("gearScreen");
     const rouletteScreen = document.getElementById("rouletteScreen");
@@ -542,6 +549,7 @@
     const rouletteResult = document.getElementById("rouletteResult");
     const gearTurnAudio = document.getElementById("gearTurnAudio");
     const revealAudio = document.getElementById("revealAudio");
+    const rouletteClickAudio = document.getElementById("rouletteClickAudio");
 
     let currentValue = 0;
     let gearRotation = 0;
@@ -769,8 +777,13 @@
     function buildRouletteTrack() {
       rouletteTrack.innerHTML = "";
       const repeated = [];
-      for (let i = 0; i < 5; i++) {
-        repeated.push(...minigames);
+
+      for (let i = 0; i < 8; i++) {
+        weightedMinigames.forEach(game => {
+          for (let j = 0; j < game.weight; j++) {
+            repeated.push(game.name);
+          }
+        });
       }
 
       repeated.forEach(name => {
@@ -786,7 +799,19 @@
       });
     }
 
-    function spinRouletteToResult(forcedPool) {
+    function pickWeightedResult() {
+      const totalWeight = weightedMinigames.reduce((sum, game) => sum + game.weight, 0);
+      let roll = Math.random() * totalWeight;
+
+      for (const game of weightedMinigames) {
+        roll -= game.weight;
+        if (roll <= 0) return game.name;
+      }
+
+      return weightedMinigames[weightedMinigames.length - 1].name;
+    }
+
+    function spinRouletteToResult() {
       return new Promise(resolve => {
         buildRouletteTrack();
         rouletteResult.classList.remove("show");
@@ -797,11 +822,11 @@
         const windowWidth = rouletteTrack.parentElement.getBoundingClientRect().width;
         const centerOffset = (windowWidth / 2) - (itemWidth / 2);
 
-        const resultName = forcedPool[Math.floor(Math.random() * forcedPool.length)];
+        const resultName = pickWeightedResult();
 
         const validIndices = [];
         allItems.forEach((item, index) => {
-          if (item.textContent === resultName && index > minigames.length && index < allItems.length - minigames.length) {
+          if (item.textContent === resultName && index > Math.floor(allItems.length * 0.25) && index < Math.floor(allItems.length * 0.85)) {
             validIndices.push(index);
           }
         });
@@ -810,19 +835,16 @@
         const targetX = -(targetIndex * itemWidth) + centerOffset;
 
         let start = null;
-        const duration = 5200;
-        const extraDistance = 880;
+        const duration = 6400;
         const startX = 0;
-        const overshootX = targetX - extraDistance;
+        const previousIndexState = { value: -1 };
 
-        function easeOutCubic(t) {
-          return 1 - Math.pow(1 - t, 3);
+        function easeOutExpo(t) {
+          return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
         }
 
-        function easeInOutQuint(t) {
-          return t < 0.5
-            ? 16 * t * t * t * t * t
-            : 1 - Math.pow(-2 * t + 2, 5) / 2;
+        function easeOutQuart(t) {
+          return 1 - Math.pow(1 - t, 4);
         }
 
         function animate(timestamp) {
@@ -830,16 +852,19 @@
           const elapsed = timestamp - start;
           const t = Math.min(elapsed / duration, 1);
 
-          let x;
-          if (t < 0.78) {
-            const phase = t / 0.78;
-            x = startX + (overshootX - startX) * easeOutCubic(phase);
-          } else {
-            const phase = (t - 0.78) / 0.22;
-            x = overshootX + (targetX - overshootX) * easeInOutQuint(phase);
-          }
+          const blended = t < 0.22
+            ? easeOutExpo(t / 0.22) * 0.38
+            : 0.38 + easeOutQuart((t - 0.22) / 0.78) * 0.62;
 
+          const x = startX + (targetX - startX) * blended;
           rouletteTrack.style.transform = `translateX(${x}px)`;
+
+          const centerPosition = -x + centerOffset;
+          const passedIndex = Math.round(centerPosition / itemWidth);
+          if (passedIndex !== previousIndexState.value && passedIndex >= 0 && passedIndex < allItems.length) {
+            previousIndexState.value = passedIndex;
+            playAudio(rouletteClickAudio, 0.45);
+          }
 
           if (t < 1) {
             spinFrame = requestAnimationFrame(animate);
@@ -861,14 +886,7 @@
       showRouletteScreen();
       setRouletteStatus("Spinning roulette");
 
-      const specialMap = {
-        Q: ["Queen's Favor", "Target Toss", "Card Blitz", "Hot Potato", "Quick Draw"],
-        K: ["King's Command", "Last Stand", "Dice Duel", "Rapid Relay", "Chair Clash"],
-        J: ["Joker's Wild", "Mystery Box", "Hot Potato", "Card Blitz", "Dice Duel"]
-      };
-
-      const pool = specialMap[inputType] || minigames;
-      const result = await spinRouletteToResult(pool);
+      const result = await spinRouletteToResult();
       playAudio(revealAudio, 0.92);
       rouletteResult.textContent = result;
       rouletteResult.classList.add("show");
@@ -927,6 +945,7 @@
       await loadGearImage();
       await assignAudioSource(gearTurnAudio, "Gear Turn.mp3");
       await assignAudioSource(revealAudio, "Reveal.mp3");
+      await assignAudioSource(rouletteClickAudio, "roulette click.mp3");
     }
 
     buildRouletteTrack();
