@@ -163,12 +163,12 @@
       display: grid;
       place-items: center;
       min-height: 100%;
-      padding: 40px;
+      padding: 12px 40px 40px;
     }
 
     .gear-stage {
       position: relative;
-      width: min(80vw, 650px);
+      width: min(96vw, 980px);
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
@@ -187,15 +187,17 @@
 
     .center-display {
       position: absolute;
+      left: 50%;
+      top: 50%;
       width: 42%;
-      max-width: 270px;
+      max-width: 320px;
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
       z-index: 2;
       user-select: none;
       pointer-events: none;
-      transform: translateY(2px);
+      transform: translate(-50%, -50%);
     }
 
     .value-stack {
@@ -206,24 +208,29 @@
       min-height: 90px;
       width: 100%;
       margin: 0 auto;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
     }
 
     .value-stack img {
-      height: clamp(74px, 14vw, 138px);
+      height: clamp(86px, 15vw, 168px);
       width: auto;
       object-fit: contain;
       image-rendering: auto;
       filter: drop-shadow(0 8px 10px rgba(0,0,0,0.35));
+      display: block;
     }
 
     .value-stack.double {
       gap: 0;
-      transform: translateX(0);
+      transform: translate(-50%, -50%);
     }
 
     .value-stack.double img {
-      height: clamp(64px, 11vw, 118px);
-      margin-left: -10px;
+      height: clamp(74px, 12vw, 132px);
+      margin-left: -18px;
     }
 
     .value-stack.double img:first-child {
@@ -232,12 +239,18 @@
 
     .center-fallback {
       display: none;
-      font-size: clamp(3.4rem, 11vw, 6.8rem);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(4rem, 12vw, 7.5rem);
       font-weight: 900;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: white;
       text-shadow: 0 8px 20px rgba(0,0,0,0.45);
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .round-info {
@@ -421,12 +434,17 @@
       }
 
       .gear-stage {
-        width: min(90vw, 520px);
+        width: min(94vw, 700px);
       }
 
       .roulette-item {
         flex-basis: 180px;
       }
+
+      .roulette-window {
+        height: 132px;
+      }
+    }
 
       .roulette-window {
         height: 132px;
@@ -774,16 +792,31 @@
       await resetAfterRound();
     }
 
+    function shuffleArray(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function buildWeightedSegment() {
+      const segment = [];
+      weightedMinigames.forEach(game => {
+        for (let j = 0; j < game.weight; j++) {
+          segment.push(game.name);
+        }
+      });
+      return shuffleArray(segment);
+    }
+
     function buildRouletteTrack() {
       rouletteTrack.innerHTML = "";
       const repeated = [];
 
-      for (let i = 0; i < 8; i++) {
-        weightedMinigames.forEach(game => {
-          for (let j = 0; j < game.weight; j++) {
-            repeated.push(game.name);
-          }
-        });
+      for (let i = 0; i < 6; i++) {
+        repeated.push(...buildWeightedSegment());
       }
 
       repeated.forEach(name => {
@@ -826,7 +859,7 @@
 
         const validIndices = [];
         allItems.forEach((item, index) => {
-          if (item.textContent === resultName && index > Math.floor(allItems.length * 0.25) && index < Math.floor(allItems.length * 0.85)) {
+          if (item.textContent === resultName && index > Math.floor(allItems.length * 0.3) && index < Math.floor(allItems.length * 0.88)) {
             validIndices.push(index);
           }
         });
@@ -835,16 +868,12 @@
         const targetX = -(targetIndex * itemWidth) + centerOffset;
 
         let start = null;
-        const duration = 6400;
+        const duration = 7600;
         const startX = 0;
         const previousIndexState = { value: -1 };
 
-        function easeOutExpo(t) {
-          return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-        }
-
-        function easeOutQuart(t) {
-          return 1 - Math.pow(1 - t, 4);
+        function easeOutCubic(t) {
+          return 1 - Math.pow(1 - t, 3);
         }
 
         function animate(timestamp) {
@@ -852,11 +881,7 @@
           const elapsed = timestamp - start;
           const t = Math.min(elapsed / duration, 1);
 
-          const blended = t < 0.22
-            ? easeOutExpo(t / 0.22) * 0.38
-            : 0.38 + easeOutQuart((t - 0.22) / 0.78) * 0.62;
-
-          const x = startX + (targetX - startX) * blended;
+          const x = startX + (targetX - startX) * easeOutCubic(t);
           rouletteTrack.style.transform = `translateX(${x}px)`;
 
           const centerPosition = -x + centerOffset;
