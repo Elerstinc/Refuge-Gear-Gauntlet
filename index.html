@@ -233,17 +233,13 @@
     }
 
     .value-stack {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      min-height: 90px;
-      width: 100%;
-      margin: 0 auto;
       position: absolute;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .value-stack img {
@@ -256,17 +252,25 @@
     }
 
     .value-stack.double {
-      gap: 0;
+      position: absolute;
+      left: 50%;
+      top: 50%;
       transform: translate(-50%, -50%);
     }
 
     .value-stack.double img {
       height: clamp(90px, 14vw, 180px);
-      margin-left: -60px;
+      position: relative;
     }
 
     .value-stack.double img:first-child {
-      margin-left: 0;
+      left: -22px;
+      z-index: 2;
+    }
+
+    .value-stack.double img:last-child {
+      left: -58px;
+      z-index: 1;
     }
 
     .value-stack.double img:first-child {
