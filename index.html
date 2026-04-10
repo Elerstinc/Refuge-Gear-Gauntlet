@@ -999,7 +999,34 @@
     }
 
     buildRouletteTrack();
-    initializeAssets().then(() => resetRoundVisuals());
+    async function loadBackground() {
+      const paths = [
+        "Gear Gauntlet Resources/Images/Background.png",
+        "Gear%20Gauntlet%20Resources/Images/Background.png",
+        "Images/Background.png",
+        "Background.png"
+      ];
+
+      for (const path of paths) {
+        const img = new Image();
+        const works = await new Promise(res => {
+          img.onload = () => res(true);
+          img.onerror = () => res(false);
+          img.src = path;
+        });
+
+        if (works) {
+          document.body.style.setProperty("--bg-img", `url('${path}')`);
+          document.styleSheets[0].insertRule(`body::before { background: url('${path}') center / cover no-repeat; }`, document.styleSheets[0].cssRules.length);
+          return;
+        }
+      }
+    }
+
+    initializeAssets().then(async () => {
+      await loadBackground();
+      resetRoundVisuals();
+    });
   </script>
 </body>
 </html>
