@@ -160,18 +160,20 @@
     }
 
     .gear-screen {
-      display: grid;
-      place-items: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       min-height: 100%;
-      padding: 12px 40px 40px;
+      padding: 20px;
     }
 
     .gear-stage {
       position: relative;
-      width: min(120vw, 1500px);
+      width: min(70vw, 720px);
       aspect-ratio: 1 / 1;
       display: grid;
       place-items: center;
+      margin: 0 auto;
       filter: drop-shadow(0 24px 50px rgba(0,0,0,0.55));
     }
 
@@ -183,6 +185,7 @@
       pointer-events: none;
       transition: transform 760ms cubic-bezier(.2,.8,.2,1);
       transform: rotate(0deg);
+      transform-origin: center center;
     }
 
     .center-display {
